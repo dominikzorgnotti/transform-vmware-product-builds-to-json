@@ -28,6 +28,9 @@ jobs:
       # Runs the .py script that generates the json files
       - name: Executing Python script to generate JSON content
         run: python ./main.py
+      
+      - name: moving Readme to outputs
+        run: cp templates/README.md outputs/README.md
              
       # Commiting to target repos
       - name: Push to central publish repo
