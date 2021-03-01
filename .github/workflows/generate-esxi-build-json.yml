@@ -28,6 +28,15 @@ jobs:
       # Runs the .py script that generates the json files
       - name: Executing Python script to generate JSON content
         run: python ./main.py
-      
+             
       # Commiting to target repos
-
+      - name: Push to central publish repo
+        uses: cpina/github-action-push-to-another-repository@master
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.DEPLOY_KEY }}
+        with:
+          source-directory: 'outputs'
+          target-branch: 'main'
+          destination-github-username: 'dominikzorgnotti'
+          destination-repository-name: 'vmware_product_releases_machine-readable'
+          user-email: dominik@why-did-it.fail
