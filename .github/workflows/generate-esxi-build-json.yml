@@ -38,5 +38,5 @@ jobs:
           source-directory: 'outputs'
           target-branch: 'main'
           destination-github-username: 'dominikzorgnotti'
-          destinanation-repository-name: 'vmware_product_releases_machine-readable'
+          destination-repository-name: 'vmware_product_releases_machine-readable'
           user-email: dominik@why-did-it.fail
