@@ -1,3 +1,22 @@
+#!/usr/bin/env python
+""" kb_data.py: Provides resolution table from VMware KBs as machine-readable json files.
+VMware KBs provide release information only as a human-readable HTML table.
+However, for automation it would be nice to have it in a machine-readable format.
+This script takes the tables from a VMware KB page and provides a json-file as an output.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with
+this program. If not, see <http://www.gnu.org/licenses/>.
+"""
+
+
+
 from webparsing import get_kb_webdata
 import html5lib
 import pandas as pd
@@ -20,7 +39,13 @@ class KbData:
     def get_resolution_section(self):
         """Extracts the resolution section from the KB article content section"""
         # Get the Section within the webpage that holds the desired data (make it a bit more targeted)
-        return self.raw_html_article["content"][1]["Resolution"]
+        if "Resolution" in self.raw_html_article["content"][1]:
+            resolution = self.raw_html_article["content"][1]["Resolution"]
+        elif "Resolution" in self.raw_html_article["content"][0]:
+            resolution = self.raw_html_article["content"][0]["Resolution"]
+        else:
+            raise ValueError("No resolution section in this page!")
+        return resolution
 
     def get_first_product_name(self):
         """Extracts the first product mentioned in the KB articles meta data"""

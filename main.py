@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" Provides resolution table from VMware KBs as machine-readable json files.
+""" main.py: Provides resolution table from VMware KBs as machine-readable json files.
 VMware KBs provide release information only as a human-readable HTML table.
 However, for automation it would be nice to have it in a machine-readable format.
 This script takes the tables from a VMware KB page and provides a json-file as an output.
@@ -27,13 +27,13 @@ __version__ = "0.0.3"
 # Imports
 from data_handling import create_json_output
 from kb_data import KbData
+from webparsing import parse_kb_article_ids
 import os
-
-# TODO: Build the list with release information automagically with info from KB 1014508
-# VMware KB 2143832: ESX(i) release data, VMware KB 2143838: vCenter release data
-# VMware KB 2143847: VMware vCloud Director and VMware vCloud Connector
+import logging
 
 # Constants
+# VMware master KB article id containing the links to all sub-articles
+MASTERKBID = 1014508
 # The relative directory where the output it stored (used in GH actions, so beware)
 OUTPUTBASEDIR = "outputs"
 # The "simple" JSON data orientation types. Index is a bit more tricky as the DF need remodeling.
@@ -43,9 +43,10 @@ if __name__ == "__main__":
     # Create output directory
     if not os.path.exists(OUTPUTBASEDIR):
         os.makedirs(OUTPUTBASEDIR)
-    vmware_release_kbs = [2143832, 2143838, 2143847]
+    vmware_release_kbs = parse_kb_article_ids(MASTERKBID)
     for kb_id in vmware_release_kbs:
-        # Pass on the KB id to 0000the data object to fill it
+        logging.info(f"Creating object for KB id {kb_id}")
+        # Pass on the KB id to the data object to fill it
         kb_article = KbData(kb_id=kb_id)
         # Create outputs
         for record_type in JSONRECORDS:
