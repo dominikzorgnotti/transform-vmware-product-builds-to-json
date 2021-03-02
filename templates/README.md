@@ -48,6 +48,6 @@ Based on feedback: I can only with data that is published in the KB articles. It
 
 ## Disclaimer
 
-This is not an official VMware repository and in not linked in official capacity to my employment at VMware.    
-All data is owned by VMware. I am just transforming the data VMware publishes in the knowledgebase and provide them in a different output format.
+This is not an official VMware repository. It is not linked in any capacity to my employment at VMware.    
+All data that is processed is provided by VMware. I am just transforming the data VMware publishes in the knowledgebase and provide them in a different output format.
 Errors can and will be made, please us this at your own discretion and test it out.
