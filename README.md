@@ -16,4 +16,4 @@ The way the output is currently structured is:
 
 ## Disclaimer
 
-This is not an official VMware repository and in not linked in official capacity to my employment at VMware.
+This is not an official VMware repository and in no way linked in official capacity to my employment at VMware.
