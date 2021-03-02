@@ -2,9 +2,6 @@ import os
 import pandas as pd
 
 
-### This could be consolidated into one function but let's keep em separated to allow for more flexibility
-
-
 def create_json_output(kb_dataobject, output_base_dir: str, record_type: str):
     """Takes a list of dataframes from a KB object, an relative output directory and a JSON data"""
     outputdir = os.path.join(output_base_dir, record_type)
