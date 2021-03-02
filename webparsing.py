@@ -15,10 +15,8 @@ You should have received a copy of the GNU General Public License along with
 this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-
-import requests
-
-# import beatufilsoup4
+import requests, re
+from bs4 import BeautifulSoup
 
 BASEURL_VMWARE_KB = "https://kb.vmware.com/services/apexrest/v1/article?docid="
 
@@ -31,9 +29,19 @@ def get_kb_webdata(kb_article_id: int):
     return response.json()
 
 
-def parse_kb_article_ids(kb_article: int):
+def parse_kb_article_ids(summary_kb_article: int):
     """Accepts an int with the KB article id holding the sub-pages with the release data. Returns these as list of int"""
-    # raw_json = get_kb_webdata(kb_article)
-    # TODO do something meaningful here
-    # TODO return list of int with all the KBs
-    pass
+    raw_data = get_kb_webdata(summary_kb_article)
+    list_of_kb_ids = []
+    # Parse for anchor tags in the table of the resolution table
+    soup = BeautifulSoup(raw_data["content"][1]["Resolution"], "html.parser")
+    table = soup.find("table")
+    anchors = table.find_all("a")
+    # A very crude way of extracting the KB id from the HREF since not all are in the same format :-(
+    regular_expression = r"/(\d+)(?:.*)"
+    regex_object = re.compile(regular_expression)
+    for href_link in anchors:
+        regex_results = regex_object.search(href_link["href"])
+        kb_id = regex_results.groups()[0]
+        list_of_kb_ids.append(int(kb_id))
+    return list_of_kb_ids
