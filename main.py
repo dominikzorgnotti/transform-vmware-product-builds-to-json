@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" Provides resolution table from VMware KBs as machine-readable json files.
+""" main.py: Provides resolution table from VMware KBs as machine-readable json files.
 VMware KBs provide release information only as a human-readable HTML table.
 However, for automation it would be nice to have it in a machine-readable format.
 This script takes the tables from a VMware KB page and provides a json-file as an output.
