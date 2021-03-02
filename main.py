@@ -25,7 +25,7 @@ __status__ = "beta"
 __version__ = "0.0.3"
 
 # Imports
-from data_handling import create_json_output, create_json_index
+from data_handling import create_json_output
 from kb_data import KbData
 import os
 
@@ -37,7 +37,7 @@ import os
 # The relative directory where the output it stored (used in GH actions, so beware)
 OUTPUTBASEDIR = "outputs"
 # The "simple" JSON data orientation types. Index is a bit more tricky as the DF need remodeling.
-JSONRECORDS = ["records", "table"]
+JSONRECORDS = ["records", "table", "index"]
 
 if __name__ == "__main__":
     # Create output directory
@@ -45,9 +45,8 @@ if __name__ == "__main__":
         os.makedirs(OUTPUTBASEDIR)
     vmware_release_kbs = [2143832, 2143838, 2143847]
     for kb_id in vmware_release_kbs:
-        # Pass on the KB id to the data object to fill it
+        # Pass on the KB id to 0000the data object to fill it
         kb_article = KbData(kb_id=kb_id)
         # Create outputs
         for record_type in JSONRECORDS:
             create_json_output(kb_dataobject=kb_article, output_base_dir=OUTPUTBASEDIR, record_type=record_type)
-        create_json_index(kb_dataobject=kb_article, output_base_dir=OUTPUTBASEDIR)
