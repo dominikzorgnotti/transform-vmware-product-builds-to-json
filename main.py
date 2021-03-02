@@ -47,7 +47,13 @@ if __name__ == "__main__":
     for kb_id in vmware_release_kbs:
         logging.info(f"Creating object for KB id {kb_id}")
         # Pass on the KB id to the data object to fill it
-        kb_article = KbData(kb_id=kb_id)
+        try:
+            kb_article = KbData(kb_id=kb_id)
+        except ValueError as err:
+            print(f"cannot handle data from {kb_article.id} without breaking: {err}")
         # Create outputs
         for record_type in JSONRECORDS:
-            create_json_output(kb_dataobject=kb_article, output_base_dir=OUTPUTBASEDIR, record_type=record_type)
+            try:
+                create_json_output(kb_dataobject=kb_article, output_base_dir=OUTPUTBASEDIR, record_type=record_type)
+            except ValueError as err:
+                print(f"cannot create json data out as {record_type} from {kb_article.id} without breaking: {err}")
