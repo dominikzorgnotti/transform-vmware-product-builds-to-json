@@ -39,7 +39,13 @@ class KbData:
     def get_resolution_section(self):
         """Extracts the resolution section from the KB article content section"""
         # Get the Section within the webpage that holds the desired data (make it a bit more targeted)
-        return self.raw_html_article["content"][1]["Resolution"]
+        if "Resolution" in self.raw_html_article["content"][1]:
+            resolution = self.raw_html_article["content"][1]["Resolution"]
+        elif "Resolution" in self.raw_html_article["content"][0]:
+            resolution = self.raw_html_article["content"][0]["Resolution"]
+        else:
+            raise ValueError("No resolution section in this page!")
+        return resolution
 
     def get_first_product_name(self):
         """Extracts the first product mentioned in the KB articles meta data"""

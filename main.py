@@ -29,6 +29,7 @@ from data_handling import create_json_output
 from kb_data import KbData
 from webparsing import parse_kb_article_ids
 import os
+import logging
 
 # Constants
 # VMware master KB article id containing the links to all sub-articles
@@ -44,7 +45,8 @@ if __name__ == "__main__":
         os.makedirs(OUTPUTBASEDIR)
     vmware_release_kbs = parse_kb_article_ids(MASTERKBID)
     for kb_id in vmware_release_kbs:
-        # Pass on the KB id to 0000the data object to fill it
+        logging.info(f"Creating object for KB id {kb_id}")
+        # Pass on the KB id to the data object to fill it
         kb_article = KbData(kb_id=kb_id)
         # Create outputs
         for record_type in JSONRECORDS:

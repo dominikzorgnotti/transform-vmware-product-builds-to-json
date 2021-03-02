@@ -33,8 +33,9 @@ def parse_kb_article_ids(summary_kb_article: int):
     """Accepts an int with the KB article id holding the sub-pages with the release data. Returns these as list of int"""
     raw_data = get_kb_webdata(summary_kb_article)
     list_of_kb_ids = []
+    resolution = raw_data["content"][1]["Resolution"]
     # Parse for anchor tags in the table of the resolution table
-    soup = BeautifulSoup(raw_data["content"][1]["Resolution"], "html.parser")
+    soup = BeautifulSoup(resolution, "html.parser")
     table = soup.find("table")
     anchors = table.find_all("a")
     # A very crude way of extracting the KB id from the HREF since not all are in the same format :-(
