@@ -25,18 +25,19 @@ __status__ = "beta"
 __version__ = "0.0.3"
 
 # Imports
-from data_handling import create_json_records, create_json_table, create_json_index
+from data_handling import create_json_output, create_json_index
 from kb_data import KbData
 import os
 
-# Constants
 # TODO: Build the list with release information automagically with info from KB 1014508
-# VMware KB 2143832: ESX(i) release data
-# VMware KB 2143838: vCenter release data
+# VMware KB 2143832: ESX(i) release data, VMware KB 2143838: vCenter release data
 # VMware KB 2143847: VMware vCloud Director and VMware vCloud Connector
+
+# Constants
+# The relative directory where the output it stored (used in GH actions, so beware)
 OUTPUTBASEDIR = "outputs"
-
-
+# The "simple" JSON data orientation types. Index is a bit more tricky as the DF need remodeling.
+JSONRECORDS = ["records", "table"]
 
 if __name__ == "__main__":
     # Create output directory
@@ -45,8 +46,8 @@ if __name__ == "__main__":
     vmware_release_kbs = [2143832, 2143838, 2143847]
     for kb_id in vmware_release_kbs:
         # Pass on the KB id to the data object to fill it
-        kb_article = KbData(kb_id)
+        kb_article = KbData(kb_id=kb_id)
         # Create outputs
-        create_json_records(kb_article, OUTPUTBASEDIR)
-        create_json_table(kb_article, OUTPUTBASEDIR)
-        create_json_index(kb_article, OUTPUTBASEDIR)
+        for record_type in JSONRECORDS:
+            create_json_output(kb_dataobject=kb_article, output_base_dir=OUTPUTBASEDIR, record_type=record_type)
+        create_json_index(kb_dataobject=kb_article, output_base_dir=OUTPUTBASEDIR)
