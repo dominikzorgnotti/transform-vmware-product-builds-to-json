@@ -22,7 +22,7 @@ __deprecated__ = False
 __contact__ = "dominik@why-did-it.fail"
 __license__ = "GPLv3"
 __status__ = "beta"
-__version__ = "0.0.3"
+__version__ = "0.1.0"
 
 # Imports
 from data_handling import create_json_output

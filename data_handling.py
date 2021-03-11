@@ -22,7 +22,7 @@ __deprecated__ = False
 __contact__ = "dominik@why-did-it.fail"
 __license__ = "GPLv3"
 __status__ = "beta"
-__version__ = "0.0.3"
+__version__ = "0.1.0"
 
 
 import os
@@ -37,6 +37,30 @@ def create_json_output(kb_dataobject, output_base_dir: str, record_type: str):
     table_id = 0
     for dataframe in kb_dataobject.list_of_dframes:
         filename = f"kb{kb_dataobject.id}_{kb_dataobject.fmt_product}_table{table_id}_release_as-{record_type}.json"
+        # vC KB specific tasks
+        if kb_dataobject.id == 2143838:
+            # When you access the vCenter API the values from this column are returned, alias it as Build Number
+            if "Client/MOB/vpxd.log" in dataframe.columns:
+                dataframe["Build Number"] = dataframe["Client/MOB/vpxd.log"]
+
+            if "Version" in dataframe.columns:
+                # Splitting the data in the Version columns does not work atm
+                pass
+                # dataframe[["Version2", "Release Name"]] = dataframe["Version"].str.split(pat=r"(", expand=True)
+                # dataframe["Release Name"] = dataframe["Release Name"].str.strip(r")")
+                # dataframe.rename(columns={"Version": "Version - Release Date"}, inplace=True)
+                # dataframe.rename(columns={"Version2": "Version"}, inplace=True)
+        # vRA KB
+        if kb_dataobject.id == 2143850:
+            if r"Build Number - Version" in dataframe:
+                dataframe[["Build Number", "Version"]] = dataframe[r"Build Number - Version"].str.split(r" - ", expand=True)
+        # General data optimization
+        if ("BuildNumber" in dataframe.columns):
+            dataframe.rename(columns={"BuildNumber": "Build Number"}, inplace=True)
+        if ("Build number" in dataframe.columns):
+            dataframe.rename(columns={"Build number": "Build Number"}, inplace=True)
+        if "ReleaseDate" in dataframe.columns:
+            dataframe.rename(columns={"ReleaseDate": "Release Date"}, inplace=True)
         if "Build Number" in dataframe.columns and record_type == "index":
             dataframe = transform_index(dataframe)
         dataframe.to_json(

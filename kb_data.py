@@ -35,6 +35,7 @@ class KbData:
         self.fmt_product = self.format_product_name()
         self.raw_html_resolution = self.get_resolution_section()
         self.list_of_dframes = self.parse_releasedata()
+        self.list_of_merged_frames = None
 
     def get_resolution_section(self):
         """Extracts the resolution section from the KB article content section"""
@@ -66,13 +67,18 @@ class KbData:
         df = pd.read_html(self.raw_html_resolution, flavor="bs4")
         # Contains a list of all tables converted to dataframes in the resolution section
         list_of_release_df = []
-        # Since the HTML table has no header, we need to reassign the first row as heading
         for table_id in range(len(df)):
-            df_header = df[table_id][:1]
-            current_df = df[table_id][1:]
-            current_df.columns = df_header.values.tolist()[0]
-            # Get the data types right, especially the date format='%m/%d/%Y'
+            # Since some HTML table have no header, we need to reassign the first row as heading
+            if "Version" not in df[table_id].columns:
+                df_header = df[table_id][:1]
+                current_df = df[table_id][1:]
+                current_df.columns = df_header.values.tolist()[0]
+                # Moving the del up here
+                del df_header
+            else:
+                current_df = df[table_id]
             releaseinfo_dataframe = current_df
+            # Get the data types right, especially the date format='%m/%d/%Y'
             if "Release Date" in current_df.columns:
                 releaseinfo_dataframe["Release Date"] = pd.to_datetime(current_df["Release Date"],
                                                                        infer_datetime_format=True, errors='coerce')
@@ -82,5 +88,5 @@ class KbData:
             #                                                           errors='coerce', downcast="integer")
             list_of_release_df.append(releaseinfo_dataframe)
             # Fun stuff may happen with dataframes if not erased before the next iteration
-            del df_header, current_df, releaseinfo_dataframe
+            del current_df, releaseinfo_dataframe
         return list_of_release_df
