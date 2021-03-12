@@ -22,7 +22,7 @@ __deprecated__ = False
 __contact__ = "dominik@why-did-it.fail"
 __license__ = "GPLv3"
 __status__ = "beta"
-__version__ = "0.0.3"
+__version__ = "0.1.0"
 
 
 import os
@@ -37,6 +37,16 @@ def create_json_output(kb_dataobject, output_base_dir: str, record_type: str):
     table_id = 0
     for dataframe in kb_dataobject.list_of_dframes:
         filename = f"kb{kb_dataobject.id}_{kb_dataobject.fmt_product}_table{table_id}_release_as-{record_type}.json"
+        # vRA KB
+        if kb_dataobject.id == 2143850:
+            dataframe = transform_kb2143850(dataframe)
+        # General data optimization
+        if ("BuildNumber" in dataframe.columns):
+            dataframe.rename(columns={"BuildNumber": "Build Number"}, inplace=True)
+        if ("Build number" in dataframe.columns):
+            dataframe.rename(columns={"Build number": "Build Number"}, inplace=True)
+        if "ReleaseDate" in dataframe.columns:
+            dataframe.rename(columns={"ReleaseDate": "Release Date"}, inplace=True)
         if "Build Number" in dataframe.columns and record_type == "index":
             dataframe = transform_index(dataframe)
         dataframe.to_json(
@@ -52,4 +62,11 @@ def transform_index(dataframe):
     dataframe.drop_duplicates(subset="Build Number", keep=False, inplace=True)
     dataframe.reset_index(drop=True)
     dataframe.set_index("Build Number", inplace=True)
+    return dataframe
+
+
+def transform_kb2143850(dataframe):
+    """Special handling of KB2143850 (vRA)"""
+    if r"Build Number - Version" in dataframe:
+        dataframe[["Build Number", "Version"]] = dataframe[r"Build Number - Version"].str.split(r" - ", expand=True)
     return dataframe

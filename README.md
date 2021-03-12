@@ -5,6 +5,9 @@ and transforms them into a machine-readable format.
 A combination of parsing with [beautiful soup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) and data handling with [Pandas](https://pandas.pydata.org/) is the used to achieve the goal.
 A process is scheduled with GitHub actions to run daily, the results will be pushed to the repo [Machine-readable VMware release data](https://github.com/dominikzorgnotti/vmware_product_releases_machine-readable).
 
+## Data standardization
+Since v0.1.0 the raw data from the published KB is transformed to establish a standard in terms of column headers, formatting, etc.
+
 ## Output format and folder structures
 The way the output is currently structured is:   
 - Directory: based on Pandas options to handle [json data orientation](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_json.html)
