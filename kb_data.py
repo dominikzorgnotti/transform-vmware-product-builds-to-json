@@ -67,26 +67,63 @@ class KbData:
         df = pd.read_html(self.raw_html_resolution, flavor="bs4")
         # Contains a list of all tables converted to dataframes in the resolution section
         list_of_release_df = []
+        dict_of_releases = {}
         for table_id in range(len(df)):
-            # Since some HTML table have no header, we need to reassign the first row as heading
-            if "Version" not in df[table_id].columns:
-                df_header = df[table_id][:1]
-                current_df = df[table_id][1:]
-                current_df.columns = df_header.values.tolist()[0]
-                # Moving the del up here
-                del df_header
+            # KB2143838 handling of vCenter 6.7 releases with VCSA and Windows
+            if self.id == 2143838 and table_id == 1:
+                vcenter67_table = df[table_id]
+                product_editions = ["VCSA", "Windows"]
+                for product_edition in product_editions:
+                    split_df = self.split_kb2143838(vcenter67_table, product_edition)
+                    reformatted_df = transform_kb2143838(split_df)
+                    list_of_release_df.append(reformatted_df)
+                    del split_df
+            elif self.id == 2143838 and table_id == 0:
+                vcenter7_table = df[table_id]
+                reformatted_df = transform_kb2143838(vcenter7_table)
+                list_of_release_df.append(reformatted_df)
             else:
-                current_df = df[table_id]
-            releaseinfo_dataframe = current_df
-            # Get the data types right, especially the date format='%m/%d/%Y'
-            if "Release Date" in current_df.columns:
-                releaseinfo_dataframe["Release Date"] = pd.to_datetime(current_df["Release Date"],
-                                                                       infer_datetime_format=True, errors='coerce')
-            # Skipping build number conversion. This produces non-deterministic results atm
-            # if "Build Number" in current_df.columns:
-            #     releaseinfo_dataframe["Build Number"] = pd.to_numeric(current_df["Build Number"],
-            #                                                           errors='coerce', downcast="integer")
-            list_of_release_df.append(releaseinfo_dataframe)
-            # Fun stuff may happen with dataframes if not erased before the next iteration
-            del current_df, releaseinfo_dataframe
+                # Since some HTML table have no header, we need to reassign the first row as heading
+                if "Version" not in df[table_id].columns:
+                    df_header = df[table_id][:1]
+                    current_df = df[table_id][1:]
+                    current_df.columns = df_header.values.tolist()[0]
+                    # Moving the del up here
+                    del df_header
+                else:
+                    current_df = df[table_id]
+                releaseinfo_dataframe = current_df
+                # Get the data types right, especially the date format='%m/%d/%Y'
+                if "Release Date" in current_df.columns:
+                    releaseinfo_dataframe["Release Date"] = pd.to_datetime(current_df["Release Date"],
+                                                                           infer_datetime_format=True, errors='coerce')
+                list_of_release_df.append(releaseinfo_dataframe)
+                # Fun stuff may happen with dataframes if not erased before the next iteration
+                del current_df, releaseinfo_dataframe
         return list_of_release_df
+
+
+    def split_kb2143838(self, dataframe, product_edition):
+        """Splits a dataframe based on the product edition (VCSA, Windows) and returns the output dataframe"""
+        tempdf_headless = dataframe[dataframe[0] == product_edition]
+        tempdf_header = tempdf_headless[:1]
+        tempdf = tempdf_headless[1:]
+        tempdf.columns = tempdf_header.values.tolist()[0]
+        tempdf.rename(columns={product_edition: "Edition"}, inplace=True)
+        #tempdf["Release Date"] = pd.to_datetime(tempdf["Release Date"],format='%Y-%m-%d', errors='coerce')
+        return tempdf
+
+def transform_kb2143838(dataframe):
+    """Special handling of KB2143838 (vCenter)"""
+    # When you access the vCenter API the values from this column are returned, alias it as Build Number
+    if "Client/MOB/vpxd.log" in dataframe.columns:
+        dataframe["Build Number"] = dataframe["Client/MOB/vpxd.log"]
+    if "Version" in dataframe.columns:
+        # Splitting the data in the Version columns does not work atm
+        #pass
+        tempdf = dataframe.rename(columns={"Version": "Version - Release Date"})
+        tempdf[["Version", "Release Name"]] = tempdf["Version - Release Date"].str.split(pat=r"(", expand=True)
+        tempdf["Release Name"] = tempdf["Release Name"].str.strip(r")")
+        # dataframe.rename(columns={"Version": "Version - Release Date"}, inplace=True)
+        # dataframe.rename(columns={"Version2": "Version"}, inplace=True)
+    return tempdf
