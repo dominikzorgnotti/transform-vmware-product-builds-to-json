@@ -37,7 +37,7 @@ def create_json_output(kb_dataobject, output_base_dir: str, record_type: str):
     table_id = 0
     for dataframe in kb_dataobject.list_of_dframes:
         filename = f"kb{kb_dataobject.id}_{kb_dataobject.fmt_product}_table{table_id}_release_as-{record_type}.json"
-        # General data optimization
+        # General data optimization, need to move this anytime to kb_data
         if ("BuildNumber" in dataframe.columns):
             dataframe.rename(columns={"BuildNumber": "Build Number"}, inplace=True)
         if ("Build number" in dataframe.columns):
@@ -51,6 +51,15 @@ def create_json_output(kb_dataobject, output_base_dir: str, record_type: str):
             indent=4, orient=record_type, date_format="iso"
         )
         table_id += 1
+    if kb_dataobject.list_of_merged_frames:
+        table_id = 0
+        for dataframe in kb_dataobject.list_of_merged_frames:
+            filename = f"kb{kb_dataobject.id}_{kb_dataobject.fmt_product}_merged{table_id}_release_as-{record_type}.json"
+            dataframe.to_json(
+                f"{outputdir}{os.sep}{filename}",
+                indent=4, orient=record_type, date_format="iso"
+            )
+            table_id += 1
 
 
 def transform_index(dataframe):

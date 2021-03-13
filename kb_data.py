@@ -88,10 +88,13 @@ class KbData:
 
 
 # You might read this and say "he's drunk!". Alas, it's pure desperation.
+
+#vCenter releases
 class Kb2143838(KbData):
     def __init__(self, kb_id):
         super().__init__(kb_id)
         self.list_of_dframes = self.parse_releasedata()
+        self.list_of_merged_frames = self.merge_tables_kb2143838()
 
     def parse_releasedata(self):
         """Accepts the html data for product releases from the KB article for parsing with pandas."""
@@ -153,6 +156,31 @@ class Kb2143838(KbData):
             tempdf["Release Name"] = tempdf["Release Name"].str.strip(r")")
         return tempdf
 
+    def merge_tables_kb2143838(self):
+        """merge table operations"""
+        merged_vcenter_tables = []
+        # Prepare the tables
+        vc7x_vcsa = self.list_of_dframes[0]
+        vc67_vcsa = self.list_of_dframes[1]
+        vc67_win = self.list_of_dframes[2]
+        vc_win_only = self.list_of_dframes[3]
+        #Merge VCSA tables
+        vcsa_builds = vc7x_vcsa.append(vc67_vcsa)
+        vcsa_builds.reset_index(drop=True)
+        vcsa_builds.set_index("Build Number", inplace=True)
+        merged_vcenter_tables.append(vcsa_builds)
+        #Merge vCenter for Windows tables
+        windows_builds = vc67_win.append(vc_win_only)
+        windows_builds.reset_index(drop=True)
+        windows_builds.set_index("Build Number", inplace=True)
+        merged_vcenter_tables.append(windows_builds)
+        #Merge both tables
+        vc_all_builds = vcsa_builds.append(windows_builds)
+        merged_vcenter_tables.append(vc_all_builds)
+        # Return the list
+        return merged_vcenter_tables
+
+#vRA releases
 class Kb2143850(KbData):
     def __init__(self, kb_id):
         super().__init__(kb_id)
