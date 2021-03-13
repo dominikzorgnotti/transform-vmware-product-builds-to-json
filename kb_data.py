@@ -18,6 +18,7 @@ this program. If not, see <http://www.gnu.org/licenses/>.
 import pandas as pd
 
 from webparsing import get_kb_webdata
+from data_handling import transform_index
 
 # YOLO as I am okay with overwriting DF data regardless of the results
 pd.options.mode.chained_assignment = None  # default='warn'
@@ -165,18 +166,17 @@ class Kb2143838(KbData):
         vc67_win = self.list_of_dframes[2]
         vc_win_only = self.list_of_dframes[3]
         #Merge VCSA tables
-        vcsa_builds = vc7x_vcsa.append(vc67_vcsa)
-        vcsa_builds.reset_index(drop=True)
-        vcsa_builds.set_index("Build Number", inplace=True)
-        merged_vcenter_tables.append(vcsa_builds)
+        merged_vcsa_builds = vc7x_vcsa.append(vc67_vcsa)
+        merged_vcsa_builds = transform_index(merged_vcsa_builds)
+        merged_vcenter_tables.append(merged_vcsa_builds)
         #Merge vCenter for Windows tables
-        windows_builds = vc67_win.append(vc_win_only)
-        windows_builds.reset_index(drop=True)
-        windows_builds.set_index("Build Number", inplace=True)
-        merged_vcenter_tables.append(windows_builds)
+        merged_windows_builds = vc67_win.append(vc_win_only)
+        merged_windows_builds = transform_index(merged_windows_builds)
+        merged_vcenter_tables.append(merged_windows_builds)
         #Merge both tables
-        vc_all_builds = vcsa_builds.append(windows_builds)
-        merged_vcenter_tables.append(vc_all_builds)
+        merged_vc_all_builds = merged_vcsa_builds.append(merged_windows_builds)
+        merged_vc_all_builds.drop_duplicates(keep=False, inplace=True)
+        merged_vcenter_tables.append(merged_vc_all_builds)
         # Return the list
         return merged_vcenter_tables
 

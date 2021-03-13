@@ -46,20 +46,28 @@ def create_json_output(kb_dataobject, output_base_dir: str, record_type: str):
             dataframe.rename(columns={"ReleaseDate": "Release Date"}, inplace=True)
         if "Build Number" in dataframe.columns and record_type == "index":
             dataframe = transform_index(dataframe)
-        dataframe.to_json(
-            f"{outputdir}{os.sep}{filename}",
-            indent=4, orient=record_type, date_format="iso"
-        )
-        table_id += 1
-    if kb_dataobject.list_of_merged_frames:
-        table_id = 0
-        for dataframe in kb_dataobject.list_of_merged_frames:
-            filename = f"kb{kb_dataobject.id}_{kb_dataobject.fmt_product}_merged{table_id}_release_as-{record_type}.json"
+        try:
             dataframe.to_json(
                 f"{outputdir}{os.sep}{filename}",
                 indent=4, orient=record_type, date_format="iso"
             )
+        except ValueError as err:
+            print(f"{kb_dataobject.id}: Error for json {record_type} in table {table_id}: {err}")
+        finally:
             table_id += 1
+    if kb_dataobject.list_of_merged_frames:
+        table_id = 0
+        for dataframe in kb_dataobject.list_of_merged_frames:
+            filename = f"kb{kb_dataobject.id}_{kb_dataobject.fmt_product}_merged{table_id}_release_as-{record_type}.json"
+            try:
+                dataframe.to_json(
+                    f"{outputdir}{os.sep}{filename}",
+                    indent=4, orient=record_type, date_format="iso"
+                )
+            except ValueError as err:
+                print(f"{kb_dataobject.id}: Error for json {record_type} in merged table {table_id}: {err}")
+            finally:
+                table_id += 1
 
 
 def transform_index(dataframe):

@@ -60,7 +60,5 @@ if __name__ == "__main__":
                 print(f"cannot handle data from {kb_article.id} without breaking: {err}")
             # Create outputs
         for record_type in JSONRECORDS:
-            try:
                 create_json_output(kb_dataobject=kb_article, output_base_dir=OUTPUTBASEDIR, record_type=record_type)
-            except ValueError as err:
-                print(f"cannot create json data out as {record_type} from {kb_article.id} without breaking: {err}")
+
