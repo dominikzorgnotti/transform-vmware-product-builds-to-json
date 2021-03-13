@@ -26,7 +26,7 @@ __version__ = "0.1.0"
 
 # Imports
 from data_handling import create_json_output
-from kb_data import KbData, Kb2143838
+from kb_data import KbData, Kb2143838, Kb2143850
 from webparsing import parse_kb_article_ids
 import os
 import logging
@@ -50,6 +50,8 @@ if __name__ == "__main__":
         # KB2143838: vCenter
         if kb_id == 2143838:
             kb_article = Kb2143838(kb_id)
+        elif kb_id == 2143850:
+            kb_article = Kb2143850(kb_id)
         else:
             try:
                 # Pass on the KB id to the data object to fill it

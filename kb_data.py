@@ -147,9 +147,41 @@ class Kb2143838(KbData):
         if "Client/MOB/vpxd.log" in dataframe.columns:
             dataframe["Build Number"] = dataframe["Client/MOB/vpxd.log"]
         if "Version" in dataframe.columns:
-            # Splitting the data in the Version columns does not work atm
-            # pass
-            tempdf = dataframe.rename(columns={"Version": "Version - Release Date"})
-            tempdf[["Version", "Release Name"]] = tempdf["Version - Release Date"].str.split(pat=r"(", expand=True)
+            dataframe["Version"].str.strip(u" ")
+            tempdf = dataframe.rename(columns={"Version": "Version - Release Name"})
+            tempdf[["Version", "Release Name"]] = tempdf["Version - Release Name"].str.split(pat=r"(", expand=True)
             tempdf["Release Name"] = tempdf["Release Name"].str.strip(r")")
         return tempdf
+
+class Kb2143850(KbData):
+    def __init__(self, kb_id):
+        super().__init__(kb_id)
+        self.list_of_dframes = self.parse_releasedata()
+
+    def parse_releasedata(self):
+        """Accepts the html data for product releases from the KB article for parsing with pandas."""
+        df = pd.read_html(self.raw_html_resolution, flavor="bs4")
+        # Contains a list of all tables converted to dataframes in the resolution section
+        list_of_release_df = []
+        for table_id in range(len(df)):
+            if table_id == 0:
+                # The HTML table have no header, we need to reassign the first row as heading
+                df_header = df[table_id][:1]
+                current_df = df[table_id][1:]
+                current_df.columns = df_header.values.tolist()[0]
+                # Moving the del up here
+                del df_header
+                current_df = self.transform_kb2143850(current_df)
+                # Get the data types right, especially the date format='%m/%d/%Y'
+                current_df["Release Date"] = pd.to_datetime(current_df["Release Date"], infer_datetime_format=True,
+                                                            errors='coerce')
+                list_of_release_df.append(current_df)
+            else:
+                print("Unknown table added, please add handling")
+        return list_of_release_df
+
+    def transform_kb2143850(self, dataframe):
+        """Special handling of KB2143850 (vRA)"""
+        if r"Build Number - Version" in dataframe:
+            dataframe[["Build Number", "Version"]] = dataframe[r"Build Number - Version"].str.split(r" - ", expand=True)
+        return dataframe
