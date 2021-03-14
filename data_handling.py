@@ -22,7 +22,7 @@ __deprecated__ = False
 __contact__ = "dominik@why-did-it.fail"
 __license__ = "GPLv3"
 __status__ = "beta"
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 import os
 

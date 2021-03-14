@@ -22,7 +22,7 @@ __deprecated__ = False
 __contact__ = "dominik@why-did-it.fail"
 __license__ = "GPLv3"
 __status__ = "beta"
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 import pandas as pd
 
@@ -139,13 +139,16 @@ class Kb2143838(KbData):
                 df_header = df[table_id][:1]
                 vcenter_le65_table = df[table_id][1:]
                 vcenter_le65_table.columns = df_header.values.tolist()[0]
-                # Moving the del up here
-                del df_header
                 # Get the data types right, especially the date format='%m/%d/%Y'
                 vcenter_le65_table["Release Date"] = pd.to_datetime(vcenter_le65_table["Release Date"], infer_datetime_format=True,
                                                             errors='coerce')
-                #TODO two DF, one with Windows and one with VCSA based on regex *Appliance*
-                list_of_release_df.append(vcenter_le65_table)
+                #Filter VCSA releases by keyword "Appliance", for Windows negate the search
+                vcsa_le65 = vcenter_le65_table[vcenter_le65_table["Version"].str.contains("appliance", case=False)]
+                vcsa_le65["Edition"] = "VCSA"
+                winvc_le65 = vcenter_le65_table[~vcenter_le65_table["Version"].str.contains("appliance", case=False)]
+                winvc_le65["Edition"] = "Windows"
+                list_of_release_df.append(vcsa_le65)
+                list_of_release_df.append(winvc_le65)
             else:
                 print("Unknown table added, please add handling")
         return list_of_release_df
@@ -183,14 +186,16 @@ class Kb2143838(KbData):
         vc7x_vcsa = self.list_of_dframes[0]
         vc67_vcsa = self.list_of_dframes[1]
         vc67_win = self.list_of_dframes[2]
-        vc_le65 = self.list_of_dframes[3]
+        vc65le_vcsa = self.list_of_dframes[3]
+        vc65le_win = self.list_of_dframes[4]
         # Solved by WET
         # Merge VCSA tables
         merged_vcsa_builds = vc7x_vcsa.append(vc67_vcsa)
+        merged_vcsa_builds = merged_vcsa_builds.append(vc65le_vcsa)
         merged_vcsa_builds.reset_index(drop=True, inplace=True)
         merged_vcenter_tables["vcsa_builds"] = merged_vcsa_builds
         # Merge vCenter for Windows tables
-        merged_windows_builds = vc67_win.append(vc_le65)
+        merged_windows_builds = vc67_win.append(vc65le_win)
         merged_windows_builds.reset_index(drop=True, inplace=True)
         merged_vcenter_tables["windows_vc_builds"] = merged_windows_builds
         # Merge both tables
