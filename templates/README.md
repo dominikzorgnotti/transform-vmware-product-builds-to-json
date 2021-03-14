@@ -16,8 +16,18 @@ Columns may have more than one value, e.g. "Build Number - Version" in KB2143850
 In this case, two additional columns (Version, Build Number) will be added to the table each containing just a single Value.
 
 ### Merged tables
-Roadmap: There may be more than one table that hold the version information, e.g. in KB2143838 (vCenter Server).
-A merge operation will attempt to provide a unified table.
+Since v0.2.0: For vCenter build information (KB2143838), this release based on PR  #5 offers merged tables:
+The KB article contains three tables:
+- Release information for VCSA 7
+- Release information for VCSA/Windows VC 6.7
+- Release information for VCSA/Windows before that
+
+The merged output available is now:
+- one table for all VCSA releases
+- one table for all Windows releases
+- one table for all releases
+Unicode issues are addressed as well
+
 
 ### Nested tables, merged columns/rows
 Roadmap: Tables may have nested tables (e.g. KB52520 - VCF).  

@@ -22,7 +22,7 @@ __deprecated__ = False
 __contact__ = "dominik@why-did-it.fail"
 __license__ = "GPLv3"
 __status__ = "beta"
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 import pandas as pd
 
@@ -112,6 +112,7 @@ class Kb2143838(KbData):
         # Contains a list of all tables converted to dataframes in the resolution section
         list_of_release_df = []
         for table_id in range(len(df)):
+            # VCSA 7
             if table_id == 0:
                 vcenter7_table = df[table_id]
                 reformatted_df = self.transform_kb2143838(vcenter7_table)
@@ -120,6 +121,7 @@ class Kb2143838(KbData):
                                                                 infer_datetime_format=True,
                                                                 errors='coerce')
                 list_of_release_df.append(reformatted_df)
+            # VCSA/Windows 6.7
             elif table_id == 1:
                 vcenter67_table = df[table_id]
                 product_editions = ["VCSA", "Windows"]
@@ -131,18 +133,22 @@ class Kb2143838(KbData):
                                                                     errors='coerce')
                     list_of_release_df.append(reformatted_df)
                     del split_df
+            # VCSA/Windows less equal 6.5
             elif table_id == 2:
                 # The HTML table have no header, we need to reassign the first row as heading
                 df_header = df[table_id][:1]
-                current_df = df[table_id][1:]
-                current_df.columns = df_header.values.tolist()[0]
-                # Moving the del up here
-                del df_header
-                current_df["Edition"] = "Windows"
+                vcenter_le65_table = df[table_id][1:]
+                vcenter_le65_table.columns = df_header.values.tolist()[0]
                 # Get the data types right, especially the date format='%m/%d/%Y'
-                current_df["Release Date"] = pd.to_datetime(current_df["Release Date"], infer_datetime_format=True,
+                vcenter_le65_table["Release Date"] = pd.to_datetime(vcenter_le65_table["Release Date"], infer_datetime_format=True,
                                                             errors='coerce')
-                list_of_release_df.append(current_df)
+                #Filter VCSA releases by keyword "Appliance", for Windows negate the search
+                vcsa_le65 = vcenter_le65_table[vcenter_le65_table["Version"].str.contains("appliance", case=False)]
+                vcsa_le65["Edition"] = "VCSA"
+                winvc_le65 = vcenter_le65_table[~vcenter_le65_table["Version"].str.contains("appliance", case=False)]
+                winvc_le65["Edition"] = "Windows"
+                list_of_release_df.append(vcsa_le65)
+                list_of_release_df.append(winvc_le65)
             else:
                 print("Unknown table added, please add handling")
         return list_of_release_df
@@ -175,25 +181,27 @@ class Kb2143838(KbData):
     def merge_tables_kb2143838(self):
         """Accepts a list of dataframes, merge them and return a list of the merged df"""
         # Return this list when ready
-        merged_vcenter_tables = []
+        merged_vcenter_tables = {}
         # Prepare the tables
         vc7x_vcsa = self.list_of_dframes[0]
         vc67_vcsa = self.list_of_dframes[1]
         vc67_win = self.list_of_dframes[2]
-        vc_win_only = self.list_of_dframes[3]
+        vc65le_vcsa = self.list_of_dframes[3]
+        vc65le_win = self.list_of_dframes[4]
         # Solved by WET
         # Merge VCSA tables
         merged_vcsa_builds = vc7x_vcsa.append(vc67_vcsa)
+        merged_vcsa_builds = merged_vcsa_builds.append(vc65le_vcsa)
         merged_vcsa_builds.reset_index(drop=True, inplace=True)
-        merged_vcenter_tables.append(merged_vcsa_builds)
+        merged_vcenter_tables["vcsa_builds"] = merged_vcsa_builds
         # Merge vCenter for Windows tables
-        merged_windows_builds = vc67_win.append(vc_win_only)
+        merged_windows_builds = vc67_win.append(vc65le_win)
         merged_windows_builds.reset_index(drop=True, inplace=True)
-        merged_vcenter_tables.append(merged_windows_builds)
+        merged_vcenter_tables["windows_vc_builds"] = merged_windows_builds
         # Merge both tables
         merged_vc_all_builds = merged_vcsa_builds.append(merged_windows_builds)
         merged_vc_all_builds.reset_index(drop=True, inplace=True)
-        merged_vcenter_tables.append(merged_vc_all_builds)
+        merged_vcenter_tables["all_vcenter_builds"] = merged_vc_all_builds
         # Return the list
         return merged_vcenter_tables
 
@@ -229,5 +237,6 @@ class Kb2143850(KbData):
     def transform_kb2143850(self, dataframe):
         """Special handling of KB2143850 (vRA)"""
         if r"Build Number - Version" in dataframe:
+            dataframe[r"Build Number - Version"] = dataframe[r"Build Number - Version"].str.normalize("NFKD")
             dataframe[["Build Number", "Version"]] = dataframe[r"Build Number - Version"].str.split(r" - ", expand=True)
         return dataframe

@@ -22,7 +22,7 @@ __deprecated__ = False
 __contact__ = "dominik@why-did-it.fail"
 __license__ = "GPLv3"
 __status__ = "beta"
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 import os
 
@@ -49,8 +49,8 @@ def create_json_output(kb_dataobject, output_base_dir: str, record_type: str):
             table_id += 1
     if kb_dataobject.list_of_merged_frames:
         table_id = 0
-        for dataframe in kb_dataobject.list_of_merged_frames:
-            filename = f"kb{kb_dataobject.id}_{kb_dataobject.fmt_product}_merged{table_id}_release_as-{record_type}.json"
+        for table_name, dataframe in kb_dataobject.list_of_merged_frames.items():
+            filename = f"kb{kb_dataobject.id}_{kb_dataobject.fmt_product}_{table_name}_as-{record_type}.json"
             if "Build Number" in dataframe.columns and record_type == "index":
                 dataframe = transform_index(dataframe)
             try:
@@ -60,8 +60,6 @@ def create_json_output(kb_dataobject, output_base_dir: str, record_type: str):
                 )
             except ValueError as err:
                 print(f"{kb_dataobject.id}: Error for json {record_type} in merged table {table_id}: {err}")
-            finally:
-                table_id += 1
 
 
 def transform_index(dataframe):
