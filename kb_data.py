@@ -15,10 +15,19 @@ You should have received a copy of the GNU General Public License along with
 this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+__author__ = "Dominik Zorgnotti"
+__contact__ = "dominik@why-did-it.fail"
+__created__ = "2020-02-26"
+__deprecated__ = False
+__contact__ = "dominik@why-did-it.fail"
+__license__ = "GPLv3"
+__status__ = "beta"
+__version__ = "0.2.0"
+
 import pandas as pd
 
-from webparsing import get_kb_webdata
 from data_handling import standardize_columns
+from webparsing import get_kb_webdata
 
 # YOLO as I am okay with overwriting DF data regardless of the results
 pd.options.mode.chained_assignment = None  # default='warn'
@@ -90,7 +99,7 @@ class KbData:
 
 # You might read this and say "he's drunk!". Alas, it's pure desperation.
 
-#vCenter releases
+# vCenter releases
 class Kb2143838(KbData):
     def __init__(self, kb_id):
         super().__init__(kb_id)
@@ -107,8 +116,9 @@ class Kb2143838(KbData):
                 vcenter7_table = df[table_id]
                 reformatted_df = self.transform_kb2143838(vcenter7_table)
                 reformatted_df["Edition"] = "VCSA"
-                reformatted_df["Release Date"] = pd.to_datetime(reformatted_df["Release Date"], infer_datetime_format=True,
-                                                            errors='coerce')
+                reformatted_df["Release Date"] = pd.to_datetime(reformatted_df["Release Date"],
+                                                                infer_datetime_format=True,
+                                                                errors='coerce')
                 list_of_release_df.append(reformatted_df)
             elif table_id == 1:
                 vcenter67_table = df[table_id]
@@ -130,7 +140,8 @@ class Kb2143838(KbData):
                 del df_header
                 current_df["Edition"] = "Windows"
                 # Get the data types right, especially the date format='%m/%d/%Y'
-                current_df["Release Date"] = pd.to_datetime(current_df["Release Date"], infer_datetime_format=True, errors='coerce')
+                current_df["Release Date"] = pd.to_datetime(current_df["Release Date"], infer_datetime_format=True,
+                                                            errors='coerce')
                 list_of_release_df.append(current_df)
             else:
                 print("Unknown table added, please add handling")
@@ -170,23 +181,24 @@ class Kb2143838(KbData):
         vc67_vcsa = self.list_of_dframes[1]
         vc67_win = self.list_of_dframes[2]
         vc_win_only = self.list_of_dframes[3]
-        #Solved by WET
-        #Merge VCSA tables
+        # Solved by WET
+        # Merge VCSA tables
         merged_vcsa_builds = vc7x_vcsa.append(vc67_vcsa)
         merged_vcsa_builds.reset_index(drop=True, inplace=True)
         merged_vcenter_tables.append(merged_vcsa_builds)
-        #Merge vCenter for Windows tables
+        # Merge vCenter for Windows tables
         merged_windows_builds = vc67_win.append(vc_win_only)
         merged_windows_builds.reset_index(drop=True, inplace=True)
         merged_vcenter_tables.append(merged_windows_builds)
-        #Merge both tables
+        # Merge both tables
         merged_vc_all_builds = merged_vcsa_builds.append(merged_windows_builds)
         merged_vc_all_builds.reset_index(drop=True, inplace=True)
         merged_vcenter_tables.append(merged_vc_all_builds)
         # Return the list
         return merged_vcenter_tables
 
-#vRA releases
+
+# vRA releases
 class Kb2143850(KbData):
     def __init__(self, kb_id):
         super().__init__(kb_id)

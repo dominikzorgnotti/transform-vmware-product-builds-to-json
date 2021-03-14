@@ -22,11 +22,9 @@ __deprecated__ = False
 __contact__ = "dominik@why-did-it.fail"
 __license__ = "GPLv3"
 __status__ = "beta"
-__version__ = "0.1.0"
-
+__version__ = "0.2.0"
 
 import os
-import pandas as pd
 
 
 def create_json_output(kb_dataobject, output_base_dir: str, record_type: str):
@@ -34,7 +32,7 @@ def create_json_output(kb_dataobject, output_base_dir: str, record_type: str):
     outputdir = os.path.join(output_base_dir, record_type)
     if not os.path.exists(outputdir):
         os.makedirs(outputdir)
-    #TODO Code repeat make this DRY anytime soon
+    # TODO Code repeat make this DRY anytime soon
     table_id = 0
     for dataframe in kb_dataobject.list_of_dframes:
         filename = f"kb{kb_dataobject.id}_{kb_dataobject.fmt_product}_table{table_id}_release_as-{record_type}.json"
@@ -74,6 +72,7 @@ def transform_index(dataframe):
     dataframe.set_index("Build Number", inplace=True)
     return dataframe
 
+
 def standardize_columns(dataframe):
     """Takes a dataframe as an input and renames the columns to a common standard"""
     if ("BuildNumber" in dataframe.columns):
@@ -83,4 +82,3 @@ def standardize_columns(dataframe):
     if "ReleaseDate" in dataframe.columns:
         dataframe.rename(columns={"ReleaseDate": "Release Date"}, inplace=True)
     return dataframe
-

@@ -15,6 +15,15 @@ You should have received a copy of the GNU General Public License along with
 this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+__author__ = "Dominik Zorgnotti"
+__contact__ = "dominik@why-did-it.fail"
+__created__ = "2020-02-26"
+__deprecated__ = False
+__contact__ = "dominik@why-did-it.fail"
+__license__ = "GPLv3"
+__status__ = "beta"
+__version__ = "0.2.0"
+
 import requests, re
 from bs4 import BeautifulSoup
 
