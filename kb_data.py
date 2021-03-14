@@ -178,7 +178,7 @@ class Kb2143838(KbData):
     def merge_tables_kb2143838(self):
         """Accepts a list of dataframes, merge them and return a list of the merged df"""
         # Return this list when ready
-        merged_vcenter_tables = []
+        merged_vcenter_tables = {}
         # Prepare the tables
         vc7x_vcsa = self.list_of_dframes[0]
         vc67_vcsa = self.list_of_dframes[1]
@@ -188,15 +188,15 @@ class Kb2143838(KbData):
         # Merge VCSA tables
         merged_vcsa_builds = vc7x_vcsa.append(vc67_vcsa)
         merged_vcsa_builds.reset_index(drop=True, inplace=True)
-        merged_vcenter_tables.append(merged_vcsa_builds)
+        merged_vcenter_tables["vcsa_builds"] = merged_vcsa_builds
         # Merge vCenter for Windows tables
         merged_windows_builds = vc67_win.append(vc_le65)
         merged_windows_builds.reset_index(drop=True, inplace=True)
-        merged_vcenter_tables.append(merged_windows_builds)
+        merged_vcenter_tables["windows_vc_builds"] = merged_windows_builds
         # Merge both tables
         merged_vc_all_builds = merged_vcsa_builds.append(merged_windows_builds)
         merged_vc_all_builds.reset_index(drop=True, inplace=True)
-        merged_vcenter_tables.append(merged_vc_all_builds)
+        merged_vcenter_tables["all_vcenter_builds"] = merged_vc_all_builds
         # Return the list
         return merged_vcenter_tables
 
