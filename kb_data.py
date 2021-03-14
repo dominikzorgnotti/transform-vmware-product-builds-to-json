@@ -18,7 +18,7 @@ this program. If not, see <http://www.gnu.org/licenses/>.
 import pandas as pd
 
 from webparsing import get_kb_webdata
-from data_handling import transform_index
+from data_handling import standardize_columns
 
 # YOLO as I am okay with overwriting DF data regardless of the results
 pd.options.mode.chained_assignment = None  # default='warn'
@@ -77,7 +77,7 @@ class KbData:
                 del df_header
             else:
                 current_df = df[table_id]
-            releaseinfo_dataframe = current_df
+            releaseinfo_dataframe = standardize_columns(current_df)
             # Get the data types right, especially the date format='%m/%d/%Y'
             if "Release Date" in current_df.columns:
                 releaseinfo_dataframe["Release Date"] = pd.to_datetime(current_df["Release Date"],
@@ -151,10 +151,14 @@ class Kb2143838(KbData):
         if "Client/MOB/vpxd.log" in dataframe.columns:
             dataframe["Build Number"] = dataframe["Client/MOB/vpxd.log"]
         if "Version" in dataframe.columns:
-            dataframe["Version"].str.strip(u" ")
+            # Normalize unicode with none breaking space in some rows
+            dataframe["Version"] = dataframe["Version"].str.normalize("NFKD")
             tempdf = dataframe.rename(columns={"Version": "Version - Release Name"})
             tempdf[["Version", "Release Name"]] = tempdf["Version - Release Name"].str.split(pat=r"(", expand=True)
+            # Remove ) and trailing space
             tempdf["Release Name"] = tempdf["Release Name"].str.strip(r")")
+            tempdf["Version"] = tempdf["Version"].str.strip()
+
         return tempdf
 
     def merge_tables_kb2143838(self):

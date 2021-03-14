@@ -34,16 +34,10 @@ def create_json_output(kb_dataobject, output_base_dir: str, record_type: str):
     outputdir = os.path.join(output_base_dir, record_type)
     if not os.path.exists(outputdir):
         os.makedirs(outputdir)
+    #TODO Code repeat make this DRY anytime soon
     table_id = 0
     for dataframe in kb_dataobject.list_of_dframes:
         filename = f"kb{kb_dataobject.id}_{kb_dataobject.fmt_product}_table{table_id}_release_as-{record_type}.json"
-        # General data optimization, need to move this anytime to kb_data
-        if ("BuildNumber" in dataframe.columns):
-            dataframe.rename(columns={"BuildNumber": "Build Number"}, inplace=True)
-        if ("Build number" in dataframe.columns):
-            dataframe.rename(columns={"Build number": "Build Number"}, inplace=True)
-        if "ReleaseDate" in dataframe.columns:
-            dataframe.rename(columns={"ReleaseDate": "Release Date"}, inplace=True)
         if "Build Number" in dataframe.columns and record_type == "index":
             dataframe = transform_index(dataframe)
         try:
@@ -59,6 +53,8 @@ def create_json_output(kb_dataobject, output_base_dir: str, record_type: str):
         table_id = 0
         for dataframe in kb_dataobject.list_of_merged_frames:
             filename = f"kb{kb_dataobject.id}_{kb_dataobject.fmt_product}_merged{table_id}_release_as-{record_type}.json"
+            if "Build Number" in dataframe.columns and record_type == "index":
+                dataframe = transform_index(dataframe)
             try:
                 dataframe.to_json(
                     f"{outputdir}{os.sep}{filename}",
@@ -78,4 +74,13 @@ def transform_index(dataframe):
     dataframe.set_index("Build Number", inplace=True)
     return dataframe
 
+def standardize_columns(dataframe):
+    """Takes a dataframe as an input and renames the columns to a common standard"""
+    if ("BuildNumber" in dataframe.columns):
+        dataframe.rename(columns={"BuildNumber": "Build Number"}, inplace=True)
+    if ("Build number" in dataframe.columns):
+        dataframe.rename(columns={"Build number": "Build Number"}, inplace=True)
+    if "ReleaseDate" in dataframe.columns:
+        dataframe.rename(columns={"ReleaseDate": "Release Date"}, inplace=True)
+    return dataframe
 
