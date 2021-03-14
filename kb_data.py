@@ -112,6 +112,7 @@ class Kb2143838(KbData):
         # Contains a list of all tables converted to dataframes in the resolution section
         list_of_release_df = []
         for table_id in range(len(df)):
+            # VCSA 7
             if table_id == 0:
                 vcenter7_table = df[table_id]
                 reformatted_df = self.transform_kb2143838(vcenter7_table)
@@ -120,6 +121,7 @@ class Kb2143838(KbData):
                                                                 infer_datetime_format=True,
                                                                 errors='coerce')
                 list_of_release_df.append(reformatted_df)
+            # VCSA/Windows 6.7
             elif table_id == 1:
                 vcenter67_table = df[table_id]
                 product_editions = ["VCSA", "Windows"]
@@ -131,18 +133,19 @@ class Kb2143838(KbData):
                                                                     errors='coerce')
                     list_of_release_df.append(reformatted_df)
                     del split_df
+            # VCSA/Windows less equal 6.5
             elif table_id == 2:
                 # The HTML table have no header, we need to reassign the first row as heading
                 df_header = df[table_id][:1]
-                current_df = df[table_id][1:]
-                current_df.columns = df_header.values.tolist()[0]
+                vcenter_le65_table = df[table_id][1:]
+                vcenter_le65_table.columns = df_header.values.tolist()[0]
                 # Moving the del up here
                 del df_header
-                current_df["Edition"] = "Windows"
                 # Get the data types right, especially the date format='%m/%d/%Y'
-                current_df["Release Date"] = pd.to_datetime(current_df["Release Date"], infer_datetime_format=True,
+                vcenter_le65_table["Release Date"] = pd.to_datetime(vcenter_le65_table["Release Date"], infer_datetime_format=True,
                                                             errors='coerce')
-                list_of_release_df.append(current_df)
+                #TODO two DF, one with Windows and one with VCSA based on regex *Appliance*
+                list_of_release_df.append(vcenter_le65_table)
             else:
                 print("Unknown table added, please add handling")
         return list_of_release_df
@@ -180,14 +183,14 @@ class Kb2143838(KbData):
         vc7x_vcsa = self.list_of_dframes[0]
         vc67_vcsa = self.list_of_dframes[1]
         vc67_win = self.list_of_dframes[2]
-        vc_win_only = self.list_of_dframes[3]
+        vc_le65 = self.list_of_dframes[3]
         # Solved by WET
         # Merge VCSA tables
         merged_vcsa_builds = vc7x_vcsa.append(vc67_vcsa)
         merged_vcsa_builds.reset_index(drop=True, inplace=True)
         merged_vcenter_tables.append(merged_vcsa_builds)
         # Merge vCenter for Windows tables
-        merged_windows_builds = vc67_win.append(vc_win_only)
+        merged_windows_builds = vc67_win.append(vc_le65)
         merged_windows_builds.reset_index(drop=True, inplace=True)
         merged_vcenter_tables.append(merged_windows_builds)
         # Merge both tables
@@ -229,5 +232,6 @@ class Kb2143850(KbData):
     def transform_kb2143850(self, dataframe):
         """Special handling of KB2143850 (vRA)"""
         if r"Build Number - Version" in dataframe:
+            dataframe[r"Build Number - Version"] = dataframe[r"Build Number - Version"].str.normalize("NFKD")
             dataframe[["Build Number", "Version"]] = dataframe[r"Build Number - Version"].str.split(r" - ", expand=True)
         return dataframe
