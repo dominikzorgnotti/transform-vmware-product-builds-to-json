@@ -22,11 +22,9 @@ __deprecated__ = False
 __contact__ = "dominik@why-did-it.fail"
 __license__ = "GPLv3"
 __status__ = "beta"
-__version__ = "0.1.0"
-
+__version__ = "0.2.0"
 
 import os
-import pandas as pd
 
 
 def create_json_output(kb_dataobject, output_base_dir: str, record_type: str):
@@ -34,26 +32,36 @@ def create_json_output(kb_dataobject, output_base_dir: str, record_type: str):
     outputdir = os.path.join(output_base_dir, record_type)
     if not os.path.exists(outputdir):
         os.makedirs(outputdir)
+    # TODO Code repeat make this DRY anytime soon
     table_id = 0
     for dataframe in kb_dataobject.list_of_dframes:
         filename = f"kb{kb_dataobject.id}_{kb_dataobject.fmt_product}_table{table_id}_release_as-{record_type}.json"
-        # vRA KB
-        if kb_dataobject.id == 2143850:
-            dataframe = transform_kb2143850(dataframe)
-        # General data optimization
-        if ("BuildNumber" in dataframe.columns):
-            dataframe.rename(columns={"BuildNumber": "Build Number"}, inplace=True)
-        if ("Build number" in dataframe.columns):
-            dataframe.rename(columns={"Build number": "Build Number"}, inplace=True)
-        if "ReleaseDate" in dataframe.columns:
-            dataframe.rename(columns={"ReleaseDate": "Release Date"}, inplace=True)
         if "Build Number" in dataframe.columns and record_type == "index":
             dataframe = transform_index(dataframe)
-        dataframe.to_json(
-            f"{outputdir}{os.sep}{filename}",
-            indent=4, orient=record_type, date_format="iso"
-        )
-        table_id += 1
+        try:
+            dataframe.to_json(
+                f"{outputdir}{os.sep}{filename}",
+                indent=4, orient=record_type, date_format="iso"
+            )
+        except ValueError as err:
+            print(f"{kb_dataobject.id}: Error for json {record_type} in table {table_id}: {err}")
+        finally:
+            table_id += 1
+    if kb_dataobject.list_of_merged_frames:
+        table_id = 0
+        for dataframe in kb_dataobject.list_of_merged_frames:
+            filename = f"kb{kb_dataobject.id}_{kb_dataobject.fmt_product}_merged{table_id}_release_as-{record_type}.json"
+            if "Build Number" in dataframe.columns and record_type == "index":
+                dataframe = transform_index(dataframe)
+            try:
+                dataframe.to_json(
+                    f"{outputdir}{os.sep}{filename}",
+                    indent=4, orient=record_type, date_format="iso"
+                )
+            except ValueError as err:
+                print(f"{kb_dataobject.id}: Error for json {record_type} in merged table {table_id}: {err}")
+            finally:
+                table_id += 1
 
 
 def transform_index(dataframe):
@@ -65,8 +73,12 @@ def transform_index(dataframe):
     return dataframe
 
 
-def transform_kb2143850(dataframe):
-    """Special handling of KB2143850 (vRA)"""
-    if r"Build Number - Version" in dataframe:
-        dataframe[["Build Number", "Version"]] = dataframe[r"Build Number - Version"].str.split(r" - ", expand=True)
+def standardize_columns(dataframe):
+    """Takes a dataframe as an input and renames the columns to a common standard"""
+    if ("BuildNumber" in dataframe.columns):
+        dataframe.rename(columns={"BuildNumber": "Build Number"}, inplace=True)
+    if ("Build number" in dataframe.columns):
+        dataframe.rename(columns={"Build number": "Build Number"}, inplace=True)
+    if "ReleaseDate" in dataframe.columns:
+        dataframe.rename(columns={"ReleaseDate": "Release Date"}, inplace=True)
     return dataframe

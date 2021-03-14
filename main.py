@@ -22,11 +22,11 @@ __deprecated__ = False
 __contact__ = "dominik@why-did-it.fail"
 __license__ = "GPLv3"
 __status__ = "beta"
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 # Imports
 from data_handling import create_json_output
-from kb_data import KbData
+from kb_data import KbData, Kb2143838, Kb2143850
 from webparsing import parse_kb_article_ids
 import os
 import logging
@@ -46,14 +46,19 @@ if __name__ == "__main__":
     vmware_release_kbs = parse_kb_article_ids(MASTERKBID)
     for kb_id in vmware_release_kbs:
         logging.info(f"Creating object for KB id {kb_id}")
-        # Pass on the KB id to the data object to fill it
-        try:
-            kb_article = KbData(kb_id=kb_id)
-        except ValueError as err:
-            print(f"cannot handle data from {kb_article.id} without breaking: {err}")
-        # Create outputs
-        for record_type in JSONRECORDS:
+        # Handle specific KBs by using extra Classes.
+        # KB2143838: vCenter
+        if kb_id == 2143838:
+            kb_article = Kb2143838(kb_id)
+        elif kb_id == 2143850:
+            kb_article = Kb2143850(kb_id)
+        else:
             try:
-                create_json_output(kb_dataobject=kb_article, output_base_dir=OUTPUTBASEDIR, record_type=record_type)
+                # Pass on the KB id to the data object to fill it
+                kb_article = KbData(kb_id=kb_id)
             except ValueError as err:
-                print(f"cannot create json data out as {record_type} from {kb_article.id} without breaking: {err}")
+                print(f"cannot handle data from {kb_article.id} without breaking: {err}")
+            # Create outputs
+        for record_type in JSONRECORDS:
+                create_json_output(kb_dataobject=kb_article, output_base_dir=OUTPUTBASEDIR, record_type=record_type)
+

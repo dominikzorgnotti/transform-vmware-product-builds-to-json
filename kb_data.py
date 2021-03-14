@@ -15,11 +15,19 @@ You should have received a copy of the GNU General Public License along with
 this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+__author__ = "Dominik Zorgnotti"
+__contact__ = "dominik@why-did-it.fail"
+__created__ = "2020-02-26"
+__deprecated__ = False
+__contact__ = "dominik@why-did-it.fail"
+__license__ = "GPLv3"
+__status__ = "beta"
+__version__ = "0.2.0"
 
-
-from webparsing import get_kb_webdata
-import html5lib
 import pandas as pd
+
+from data_handling import standardize_columns
+from webparsing import get_kb_webdata
 
 # YOLO as I am okay with overwriting DF data regardless of the results
 pd.options.mode.chained_assignment = None  # default='warn'
@@ -69,39 +77,75 @@ class KbData:
         list_of_release_df = []
         dict_of_releases = {}
         for table_id in range(len(df)):
-            # KB2143838 handling of vCenter 6.7 releases with VCSA and Windows
-            if self.id == 2143838 and table_id == 1:
+            # Since some HTML table have no header, we need to reassign the first row as heading
+            if "Version" not in df[table_id].columns:
+                df_header = df[table_id][:1]
+                current_df = df[table_id][1:]
+                current_df.columns = df_header.values.tolist()[0]
+                # Moving the del up here
+                del df_header
+            else:
+                current_df = df[table_id]
+            releaseinfo_dataframe = standardize_columns(current_df)
+            # Get the data types right, especially the date format='%m/%d/%Y'
+            if "Release Date" in current_df.columns:
+                releaseinfo_dataframe["Release Date"] = pd.to_datetime(current_df["Release Date"],
+                                                                       infer_datetime_format=True, errors='coerce')
+            list_of_release_df.append(releaseinfo_dataframe)
+            # Fun stuff may happen with dataframes if not erased before the next iteration
+            del current_df, releaseinfo_dataframe
+        return list_of_release_df
+
+
+# You might read this and say "he's drunk!". Alas, it's pure desperation.
+
+# vCenter releases
+class Kb2143838(KbData):
+    def __init__(self, kb_id):
+        super().__init__(kb_id)
+        self.list_of_dframes = self.parse_releasedata()
+        self.list_of_merged_frames = self.merge_tables_kb2143838()
+
+    def parse_releasedata(self):
+        """Accepts the html data for product releases from the KB article for parsing with pandas."""
+        df = pd.read_html(self.raw_html_resolution, flavor="bs4")
+        # Contains a list of all tables converted to dataframes in the resolution section
+        list_of_release_df = []
+        for table_id in range(len(df)):
+            if table_id == 0:
+                vcenter7_table = df[table_id]
+                reformatted_df = self.transform_kb2143838(vcenter7_table)
+                reformatted_df["Edition"] = "VCSA"
+                reformatted_df["Release Date"] = pd.to_datetime(reformatted_df["Release Date"],
+                                                                infer_datetime_format=True,
+                                                                errors='coerce')
+                list_of_release_df.append(reformatted_df)
+            elif table_id == 1:
                 vcenter67_table = df[table_id]
                 product_editions = ["VCSA", "Windows"]
                 for product_edition in product_editions:
                     split_df = self.split_kb2143838(vcenter67_table, product_edition)
-                    reformatted_df = transform_kb2143838(split_df)
+                    reformatted_df = self.transform_kb2143838(split_df)
+                    reformatted_df["Release Date"] = pd.to_datetime(reformatted_df["Release Date"],
+                                                                    infer_datetime_format=True,
+                                                                    errors='coerce')
                     list_of_release_df.append(reformatted_df)
                     del split_df
-            elif self.id == 2143838 and table_id == 0:
-                vcenter7_table = df[table_id]
-                reformatted_df = transform_kb2143838(vcenter7_table)
-                list_of_release_df.append(reformatted_df)
-            else:
-                # Since some HTML table have no header, we need to reassign the first row as heading
-                if "Version" not in df[table_id].columns:
-                    df_header = df[table_id][:1]
-                    current_df = df[table_id][1:]
-                    current_df.columns = df_header.values.tolist()[0]
-                    # Moving the del up here
-                    del df_header
-                else:
-                    current_df = df[table_id]
-                releaseinfo_dataframe = current_df
+            elif table_id == 2:
+                # The HTML table have no header, we need to reassign the first row as heading
+                df_header = df[table_id][:1]
+                current_df = df[table_id][1:]
+                current_df.columns = df_header.values.tolist()[0]
+                # Moving the del up here
+                del df_header
+                current_df["Edition"] = "Windows"
                 # Get the data types right, especially the date format='%m/%d/%Y'
-                if "Release Date" in current_df.columns:
-                    releaseinfo_dataframe["Release Date"] = pd.to_datetime(current_df["Release Date"],
-                                                                           infer_datetime_format=True, errors='coerce')
-                list_of_release_df.append(releaseinfo_dataframe)
-                # Fun stuff may happen with dataframes if not erased before the next iteration
-                del current_df, releaseinfo_dataframe
+                current_df["Release Date"] = pd.to_datetime(current_df["Release Date"], infer_datetime_format=True,
+                                                            errors='coerce')
+                list_of_release_df.append(current_df)
+            else:
+                print("Unknown table added, please add handling")
         return list_of_release_df
-
 
     def split_kb2143838(self, dataframe, product_edition):
         """Splits a dataframe based on the product edition (VCSA, Windows) and returns the output dataframe"""
@@ -110,20 +154,80 @@ class KbData:
         tempdf = tempdf_headless[1:]
         tempdf.columns = tempdf_header.values.tolist()[0]
         tempdf.rename(columns={product_edition: "Edition"}, inplace=True)
-        #tempdf["Release Date"] = pd.to_datetime(tempdf["Release Date"],format='%Y-%m-%d', errors='coerce')
         return tempdf
 
-def transform_kb2143838(dataframe):
-    """Special handling of KB2143838 (vCenter)"""
-    # When you access the vCenter API the values from this column are returned, alias it as Build Number
-    if "Client/MOB/vpxd.log" in dataframe.columns:
-        dataframe["Build Number"] = dataframe["Client/MOB/vpxd.log"]
-    if "Version" in dataframe.columns:
-        # Splitting the data in the Version columns does not work atm
-        #pass
-        tempdf = dataframe.rename(columns={"Version": "Version - Release Date"})
-        tempdf[["Version", "Release Name"]] = tempdf["Version - Release Date"].str.split(pat=r"(", expand=True)
-        tempdf["Release Name"] = tempdf["Release Name"].str.strip(r")")
-        # dataframe.rename(columns={"Version": "Version - Release Date"}, inplace=True)
-        # dataframe.rename(columns={"Version2": "Version"}, inplace=True)
-    return tempdf
+    def transform_kb2143838(self, dataframe):
+        """Special handling of KB2143838 (vCenter)"""
+        # When you access the vCenter API the values from this column are returned, alias it as Build Number
+        if "Client/MOB/vpxd.log" in dataframe.columns:
+            dataframe["Build Number"] = dataframe["Client/MOB/vpxd.log"]
+        if "Version" in dataframe.columns:
+            # Normalize unicode with none breaking space in some rows
+            dataframe["Version"] = dataframe["Version"].str.normalize("NFKD")
+            tempdf = dataframe.rename(columns={"Version": "Version - Release Name"})
+            tempdf[["Version", "Release Name"]] = tempdf["Version - Release Name"].str.split(pat=r"(", expand=True)
+            # Remove ) and trailing space
+            tempdf["Release Name"] = tempdf["Release Name"].str.strip(r")")
+            tempdf["Version"] = tempdf["Version"].str.strip()
+
+        return tempdf
+
+    def merge_tables_kb2143838(self):
+        """Accepts a list of dataframes, merge them and return a list of the merged df"""
+        # Return this list when ready
+        merged_vcenter_tables = []
+        # Prepare the tables
+        vc7x_vcsa = self.list_of_dframes[0]
+        vc67_vcsa = self.list_of_dframes[1]
+        vc67_win = self.list_of_dframes[2]
+        vc_win_only = self.list_of_dframes[3]
+        # Solved by WET
+        # Merge VCSA tables
+        merged_vcsa_builds = vc7x_vcsa.append(vc67_vcsa)
+        merged_vcsa_builds.reset_index(drop=True, inplace=True)
+        merged_vcenter_tables.append(merged_vcsa_builds)
+        # Merge vCenter for Windows tables
+        merged_windows_builds = vc67_win.append(vc_win_only)
+        merged_windows_builds.reset_index(drop=True, inplace=True)
+        merged_vcenter_tables.append(merged_windows_builds)
+        # Merge both tables
+        merged_vc_all_builds = merged_vcsa_builds.append(merged_windows_builds)
+        merged_vc_all_builds.reset_index(drop=True, inplace=True)
+        merged_vcenter_tables.append(merged_vc_all_builds)
+        # Return the list
+        return merged_vcenter_tables
+
+
+# vRA releases
+class Kb2143850(KbData):
+    def __init__(self, kb_id):
+        super().__init__(kb_id)
+        self.list_of_dframes = self.parse_releasedata()
+
+    def parse_releasedata(self):
+        """Accepts the html data for product releases from the KB article for parsing with pandas."""
+        df = pd.read_html(self.raw_html_resolution, flavor="bs4")
+        # Contains a list of all tables converted to dataframes in the resolution section
+        list_of_release_df = []
+        for table_id in range(len(df)):
+            if table_id == 0:
+                # The HTML table have no header, we need to reassign the first row as heading
+                df_header = df[table_id][:1]
+                current_df = df[table_id][1:]
+                current_df.columns = df_header.values.tolist()[0]
+                # Moving the del up here
+                del df_header
+                current_df = self.transform_kb2143850(current_df)
+                # Get the data types right, especially the date format='%m/%d/%Y'
+                current_df["Release Date"] = pd.to_datetime(current_df["Release Date"], infer_datetime_format=True,
+                                                            errors='coerce')
+                list_of_release_df.append(current_df)
+            else:
+                print("Unknown table added, please add handling")
+        return list_of_release_df
+
+    def transform_kb2143850(self, dataframe):
+        """Special handling of KB2143850 (vRA)"""
+        if r"Build Number - Version" in dataframe:
+            dataframe[["Build Number", "Version"]] = dataframe[r"Build Number - Version"].str.split(r" - ", expand=True)
+        return dataframe

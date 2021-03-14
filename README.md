@@ -7,6 +7,23 @@ A process is scheduled with GitHub actions to run daily, the results will be pus
 
 ## Data standardization
 Since v0.1.0 the raw data from the published KB is transformed to establish a standard in terms of column headers, formatting, etc.
+KB 2143832 (ESXi) is used as the model for providing a standardized information set.
+
+### Uniform column names
+Columns describing the same data set have different labels, e.g. "Build number", "Build Number", "BuildNumber".  
+In case of the example, the columns will be renamed to "Build Number" per KB 2143832.
+
+### Multi-value columns
+Columns may have more than one value, e.g. "Build Number - Version" in KB2143850 (vRealize Automation).  
+In this case, two additional columns (Version, Build Number) will be added to the table each containing just a single Value.
+
+### Merged tables
+Roadmap: There may be more than one table that hold the version information, e.g. in KB2143838 (vCenter Server).
+A merge operation will attempt to provide a unified table.
+
+### Nested tables, merged columns/rows
+Roadmap: Tables may have nested tables (e.g. KB52520 - VCF).  
+A decomposition is needed to provide the information in a usable format. 
 
 ## Output format and folder structures
 The way the output is currently structured is:   
