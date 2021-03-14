@@ -20,7 +20,7 @@ Roadmap: There may be more than one table that hold the version information, e.g
 A merge operation will attempt to provide a unified table.
 
 ### Nested tables, merged columns/rows
-Roadmap: Tables may have nested tables (e.g. KB52520 - VCF)
+Roadmap: Tables may have nested tables (e.g. KB52520 - VCF).  
 A decomposition is needed to provide the information in a usable format.
 ## Output format and folder structures
 Different use-cases, different ways to organize data.  
@@ -68,4 +68,4 @@ Based on feedback: I can only with data that is published in the KB articles. It
 
 This is not an official VMware repository. It is not linked in any capacity to my employment at VMware.    
 All data that is processed is provided by VMware. I am just transforming the data VMware publishes in the knowledgebase and provide them in a different output format.
-Errors can and will be made, please us this at your own discretion and test it out.
+Errors can and will be made, please use this at your own discretion and test it out.

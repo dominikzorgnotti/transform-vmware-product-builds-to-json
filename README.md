@@ -22,7 +22,7 @@ Roadmap: There may be more than one table that hold the version information, e.g
 A merge operation will attempt to provide a unified table.
 
 ### Nested tables, merged columns/rows
-Roadmap: Tables may have nested tables (e.g. KB52520 - VCF)
+Roadmap: Tables may have nested tables (e.g. KB52520 - VCF).  
 A decomposition is needed to provide the information in a usable format. 
 
 ## Output format and folder structures
