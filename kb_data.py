@@ -22,7 +22,7 @@ __deprecated__ = False
 __contact__ = "dominik@why-did-it.fail"
 __license__ = "GPLv3"
 __status__ = "beta"
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 import pandas as pd
 
@@ -140,9 +140,10 @@ class Kb2143838(KbData):
                 vcenter_le65_table = df[table_id][1:]
                 vcenter_le65_table.columns = df_header.values.tolist()[0]
                 # Get the data types right, especially the date format='%m/%d/%Y'
-                vcenter_le65_table["Release Date"] = pd.to_datetime(vcenter_le65_table["Release Date"], infer_datetime_format=True,
-                                                            errors='coerce')
-                #Filter VCSA releases by keyword "Appliance", for Windows negate the search
+                vcenter_le65_table["Release Date"] = pd.to_datetime(vcenter_le65_table["Release Date"],
+                                                                    infer_datetime_format=True,
+                                                                    errors='coerce')
+                # Filter VCSA releases by keyword "Appliance", for Windows negate the search
                 vcsa_le65 = vcenter_le65_table[vcenter_le65_table["Version"].str.contains("appliance", case=False)]
                 vcsa_le65["Edition"] = "VCSA"
                 winvc_le65 = vcenter_le65_table[~vcenter_le65_table["Version"].str.contains("appliance", case=False)]
@@ -240,3 +241,49 @@ class Kb2143850(KbData):
             dataframe[r"Build Number - Version"] = dataframe[r"Build Number - Version"].str.normalize("NFKD")
             dataframe[["Build Number", "Version"]] = dataframe[r"Build Number - Version"].str.split(r" - ", expand=True)
         return dataframe
+
+
+# vxrail releases
+class Kb52075(KbData):
+    def __init__(self, kb_id):
+        super().__init__(kb_id)
+        self.list_of_dframes = self.parse_releasedata()
+
+    def get_first_product_name(self):
+        """Overriding function with hardcoded value as it isn't in the meta section"""
+        return "Dell VxRAIL"
+
+    def parse_releasedata(self):
+        """Accepts the html data for product releases from the KB article for parsing with pandas."""
+        df = pd.read_html(self.raw_html_resolution, flavor="bs4")
+        # Contains a list of all tables converted to dataframes in the resolution section
+        list_of_release_df = []
+        for table_id in range(len(df)):
+            if table_id == 0:
+                # The HTML table have no header, we need to reassign the first row as heading
+                df_header = df[table_id][:1]
+                # The header has more than one column header, let's merge. I am not even attempting to automate this.
+                df_header.at[0, 6] = "External vCSA - Min"
+                df_header.at[0, 7] = "External vCSA - Recommended"
+                df_header.at[0, 8] = "External vCSA - Max"
+                current_df = df[table_id][2:]
+                current_df.columns = df_header.values.tolist()[0]
+                # Moving the del up here
+                del df_header
+                # Normalize unicode with none breaking space in some rows
+                current_df["Esxi (Version - Build #)"] = current_df["Esxi (Version - Build #)"].str.normalize("NFKD")
+                # Atomize multi-value columns
+                current_df[["ESXi version", "ESXi build number"]] = current_df["Esxi (Version - Build #)"].str.split(
+                    pat=r"-", expand=True)
+                current_df["ESXi version"] = current_df["ESXi version"].str.strip()
+                current_df["ESXi build number"] = current_df["ESXi build number"].str.strip()
+                current_df[["VxRail manager version", "VxRail manager build number"]] = current_df[
+                    "VxRail manager"].str.split(
+                    pat=r"-", expand=True)
+                current_df["VxRail manager build number"] = current_df["VxRail manager build number"].str.strip()
+                current_df["VxRail manager version"] = current_df["VxRail manager version"].str.strip()
+                current_df.reset_index(drop=True, inplace=True)
+                list_of_release_df.append(current_df)
+            else:
+                print("Unknown table added, please add handling")
+        return list_of_release_df
