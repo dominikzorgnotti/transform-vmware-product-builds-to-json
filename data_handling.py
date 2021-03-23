@@ -38,6 +38,9 @@ def create_json_output(kb_dataobject, output_base_dir: str, record_type: str):
         filename = f"kb{kb_dataobject.id}_{kb_dataobject.fmt_product}_table{table_id}_release_as-{record_type}.json"
         if "Build Number" in dataframe.columns and record_type == "index":
             dataframe = transform_index(dataframe)
+        # Adding vxrail handling
+        elif kb_dataobject.id == 52075 and record_type == "index":
+            dataframe = transform_kb52075_index(dataframe)
         try:
             dataframe.to_json(
                 f"{outputdir}{os.sep}{filename}",
@@ -63,13 +66,20 @@ def create_json_output(kb_dataobject, output_base_dir: str, record_type: str):
 
 
 def transform_index(dataframe):
-    """Takes a dataframe as an input and re-creates the index based on the build number. Destructive to the dataframe
+    """Takes a dataframe as an input and re-creates the index based on the vxrail release. Destructive to the dataframe
     as duplicates are erased"""
     dataframe.drop_duplicates(subset="Build Number", keep=False, inplace=True)
     dataframe.reset_index(drop=True)
     dataframe.set_index("Build Number", inplace=True)
     return dataframe
 
+def transform_kb52075_index(dataframe):
+    """Takes the vxrail dataframe as an input and re-creates the index based on the build number. Destructive to the dataframe
+        as duplicates are erased"""
+    dataframe.drop_duplicates(subset="VxRail Release", keep=False, inplace=True)
+    dataframe.reset_index(drop=True)
+    dataframe.set_index("VxRail Release", inplace=True)
+    return dataframe
 
 def standardize_columns(dataframe):
     """Takes a dataframe as an input and renames the columns to a common standard"""

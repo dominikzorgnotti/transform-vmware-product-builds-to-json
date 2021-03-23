@@ -26,7 +26,7 @@ __version__ = "0.3.0"
 
 # Imports
 from data_handling import create_json_output
-from kb_data import KbData, Kb2143838, Kb2143850
+from kb_data import KbData, Kb2143838, Kb2143850, Kb52075
 from webparsing import parse_kb_article_ids
 import os
 import logging
@@ -48,10 +48,14 @@ if __name__ == "__main__":
         logging.info(f"Creating object for KB id {kb_id}")
         # Handle specific KBs by using extra Classes.
         # KB2143838: vCenter
+        # KB2143850: vRA
+        # KB52075: vxrail
         if kb_id == 2143838:
             kb_article = Kb2143838(kb_id)
         elif kb_id == 2143850:
             kb_article = Kb2143850(kb_id)
+        elif kb_id == 52075:
+            kb_article = Kb52075(kb_id)
         else:
             try:
                 # Pass on the KB id to the data object to fill it
