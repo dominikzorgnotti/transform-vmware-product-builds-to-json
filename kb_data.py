@@ -287,3 +287,38 @@ class Kb52075(KbData):
             else:
                 print("Unknown table added, please add handling")
         return list_of_release_df
+
+# VCF releases
+class Kb52520(KbData):
+    def __init__(self, kb_id):
+        super().__init__(kb_id)
+        self.list_of_dframes = self.parse_releasedata()
+
+    def parse_releasedata(self):
+        """Accepts the html data for product releases from the KB article for parsing with pandas."""
+        df = pd.read_html(self.raw_html_resolution, flavor="bs4")
+        # Contains a list of all tables converted to dataframes in the resolution section
+        list_of_release_df = []
+
+        # Target DF
+        """
+        Version: VMware Cloud Foundation 4.2
+        Build Number: 17559673
+        Release Date: 2021-02-09
+        Software Components: {
+            vRSLCM: {
+                Build Number: 17513665
+                Version: 8.2 P2
+                },
+            Cloud Builder: {
+                Version: 4.2
+                Build Number: 17559673
+            }
+                }
+        """
+        # Needed Operations
+            # Normalize Unicode
+            # Split Multi-Value Columns (e.g. Column0)
+            # Re-orient table (row / column)
+
+        return list_of_release_df
