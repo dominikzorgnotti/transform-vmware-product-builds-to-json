@@ -289,6 +289,34 @@ class Kb52075(KbData):
         return list_of_release_df
 
 # VCF releases
+"""
+The complexity of this table requires a new data model.
+Tasks include:
+    - Normalize Unicode
+    - Split Multi-Value Columns (e.g. Column0)
+    - Re-orient table (row / column)
+    
+    Desired Output:
+            
+    Version: VMware Cloud Foundation 4.2
+    Build Number: 17559673
+    Release Date: 2021-02-09
+    Software Components: {
+        vRSLCM: {
+            Build Number: 17513665
+            Version: 8.2 P2
+            },
+        Cloud Builder: {
+            Version: 4.2
+            Build Number: 17559673
+        }
+            }
+
+Select a row: vcf4.iloc[2]
+Select two rows: vcf4.iloc[[1,2]]
+Name of the column: vcf4.iloc[:,3].name
+"""
+
 class Kb52520(KbData):
     def __init__(self, kb_id):
         super().__init__(kb_id)
@@ -299,26 +327,39 @@ class Kb52520(KbData):
         df = pd.read_html(self.raw_html_resolution, flavor="bs4")
         # Contains a list of all tables converted to dataframes in the resolution section
         list_of_release_df = []
+        for table_id in range(len(df)):
+            if "VCF Release1,2" not in df[table_id].columns:
+                # VCF headings are in the 2nd row
+                df_header = df[table_id][1:2]
+                # Get rid of the footnotes, take the first match group consisting of non-digit values as new header
+                df_header = df_header.replace(to_replace =r"(\D+).*", value = r"\1", regex = True)
+                df_header = df_header.replace(to_replace=r"GA [Dd]ate", value=r"Release Date", regex=True)
+                current_df = df[table_id][2:]
+                current_df.columns = df_header.values.tolist()[0]
+                # Moving the del up here
+                del df_header
+                # Walk through every column and decide case by case
+                for column_id in range(len(current_df.columns)):
+                    current_column = current_df.iloc[:, column_id].name
+                    current_df[current_column] = current_df[current_column].str.normalize("NFKD")
+                    if current_column == "VCF Release":
+                        current_df[[f"{current_column}.version", f"{current_column}.build number"]] = current_df[
+                            current_column].str.split(pat=r"[Bb]uild:", expand=True)
+                        current_df[f"{current_column}.version"] = current_df[f"{current_column}.version"].str.strip(
+                            "[vV]ersion ")
+                        current_df[f"{current_column}.version"] = current_df[f"{current_column}.version"].str.strip()
+                        current_df[f"{current_column}.build number"] = current_df[f"{current_column}.build number"].str.strip()
+                    elif current_column == "Depends On":
+                        print("")
+                    elif current_column == "Release Date":
+                        current_df[current_column] = pd.to_datetime(current_df[current_column],
+                                                                    infer_datetime_format=True,
+                                                                    errors='coerce')
+                    else:
+                        current_df[[f"{current_column}.version", f"{current_column}.build number"]] = current_df[current_column].str.split(
+                            pat=r" [Bb]:", expand=True)
+                        current_df[f"{current_column}.version"] = current_df[f"{current_column}.version"].str.strip("[vV]: ")
+                        current_df.drop([current_column], axis=1, inplace=True)
 
-        # Target DF
-        """
-        Version: VMware Cloud Foundation 4.2
-        Build Number: 17559673
-        Release Date: 2021-02-09
-        Software Components: {
-            vRSLCM: {
-                Build Number: 17513665
-                Version: 8.2 P2
-                },
-            Cloud Builder: {
-                Version: 4.2
-                Build Number: 17559673
-            }
-                }
-        """
-        # Needed Operations
-            # Normalize Unicode
-            # Split Multi-Value Columns (e.g. Column0)
-            # Re-orient table (row / column)
 
         return list_of_release_df
