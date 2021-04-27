@@ -34,7 +34,7 @@ jobs:
              
       # Commiting to target repos
       - name: Push to central publish repo
-        uses: cpina/github-action-push-to-another-repository@master
+        uses: cpina/github-action-push-to-another-repository@main
         env:
           API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
         with:
