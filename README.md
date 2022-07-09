@@ -1,5 +1,11 @@
 # Transform VMware product builds
 
+## Current Status
+⚠️  The VMware KB API changed which introduced a breaking change for this project. This is tracked in issue https://github.com/dominikzorgnotti/transform-vmware-product-builds-to-json/issues/9  
+⚠️ At the moment, release data is not updated
+
+## Intro
+
 This Python code parses VMware product release data from the kb
 article [Correlating build numbers and versions of VMware products (1014508)](https://kb.vmware.com/s/article/1014508?lang=en_US)
 and transforms them into a machine-readable format.  
